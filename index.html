@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5b7cff">
+<title>每日体重</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --primary:#5b7cff;
+  --text:#22263a; --text2:#8a91a6; --text3:#b8bdcc;
+  --bg:#f3f5fa; --card:#fff; --line:#eef0f6;
+  --up:#ff5a6e; --down:#12b981;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;border:none;background:none;cursor:pointer;touch-action:manipulation}
+input{font-family:inherit}
+.app{max-width:480px;margin:0 auto;padding:20px 16px calc(36px + env(safe-area-inset-bottom))}
+
+/* 顶部卡片 */
+.hero{background:linear-gradient(135deg,#5b7cff,#8a5bff);border-radius:20px;padding:22px 20px 20px;color:#fff;box-shadow:0 10px 26px rgba(91,124,255,.28);position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;right:-46px;top:-46px;width:170px;height:170px;border-radius:50%;background:rgba(255,255,255,.12)}
+.hero-top{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:1}
+.hero-label{font-size:13px;opacity:.85}
+.hero-weight{font-size:44px;font-weight:700;line-height:1.15;margin-top:2px;font-variant-numeric:tabular-nums}
+.hero-weight .unit{font-size:16px;font-weight:500;opacity:.85;margin-left:2px}
+.hero-delta{font-size:13px;opacity:.95;margin-top:3px;display:flex;align-items:center;gap:4px;min-height:18px}
+.streak{background:rgba(255,255,255,.18);border-radius:14px;padding:9px 14px;text-align:center;min-width:80px;backdrop-filter:blur(4px)}
+.streak-num{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.streak-label{font-size:11px;opacity:.85;margin-top:1px}
+
+/* 统计行 */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.stat{background:var(--card);border-radius:16px;padding:12px 10px;text-align:center;box-shadow:0 2px 12px rgba(31,35,51,.05)}
+.stat-label{font-size:11px;color:var(--text2)}
+.stat-value{font-size:17px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+.stat-value.up{color:var(--up)}
+.stat-value.down{color:var(--down)}
+
+/* 通用卡片 */
+.card{background:var(--card);border-radius:18px;padding:16px;margin-top:12px;box-shadow:0 2px 12px rgba(31,35,51,.05)}
+.card-title{font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-title .sub{font-size:11px;color:var(--text3);font-weight:400}
+
+/* 趋势图 */
+.chart-wrap{position:relative;margin-top:10px}
+.chart-wrap svg{display:block;width:100%;touch-action:pan-y}
+.chart-empty{padding:34px 0;text-align:center;color:var(--text3);font-size:13px}
+.tip{position:absolute;background:rgba(34,38,58,.92);color:#fff;font-size:12px;padding:4px 9px;border-radius:8px;transform:translate(-50%,-135%);white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;font-variant-numeric:tabular-nums;z-index:2}
+.tip.show{opacity:1}
+
+/* 录入 */
+.field-row{display:flex;gap:10px;margin-top:14px}
+.field{flex:1}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px}
+.field input[type=date]{width:100%;height:44px;border:1.5px solid var(--line);border-radius:12px;padding:0 10px;font-size:16px;color:var(--text);background:#fafbfe;outline:none;-webkit-appearance:none;appearance:none}
+.field input:focus{border-color:var(--primary);background:#fff}
+.stepper{display:flex;align-items:stretch;height:44px}
+.step-btn{width:42px;border:1.5px solid var(--line);background:#fafbfe;border-radius:12px;font-size:20px;color:var(--text2);display:flex;align-items:center;justify-content:center;user-select:none}
+.step-btn:active{background:#eef1fb;color:var(--primary)}
+.stepper input{flex:1;min-width:0;border:1.5px solid var(--line);border-left:none;border-right:none;background:#fafbfe;text-align:center;font-size:17px;font-weight:600;color:var(--text);outline:none;-moz-appearance:textfield;appearance:textfield}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none}
+.stepper input:focus{background:#fff}
+.stepper input::placeholder{font-weight:400;color:var(--text3)}
+.hint{font-size:12px;color:var(--primary);margin-top:8px;min-height:16px}
+.save-btn{width:100%;height:48px;margin-top:10px;border-radius:14px;background:linear-gradient(135deg,#5b7cff,#8a5bff);color:#fff;font-size:16px;font-weight:600;box-shadow:0 6px 16px rgba(91,124,255,.32);transition:transform .1s}
+.save-btn:active{transform:scale(.97)}
+
+/* 历史记录 */
+.history{list-style:none;margin-top:6px}
+.history-row{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.history-row:last-child{border-bottom:none}
+.history-date{width:92px}
+.hd-main{display:block;font-size:15px;font-weight:600}
+.hd-sub{display:block;font-size:11px;color:var(--text3);margin-top:1px}
+.history-weight{flex:1;text-align:right;font-variant-numeric:tabular-nums}
+.hw-main{font-size:17px;font-weight:700}
+.hw-unit{font-size:11px;color:var(--text3);margin-left:2px}
+.history-delta{width:64px;text-align:right;font-size:12px;font-variant-numeric:tabular-nums}
+.history-delta.up{color:var(--up)}
+.history-delta.down{color:var(--down)}
+.history-delta.flat{color:var(--text3)}
+.del-btn{width:34px;height:34px;margin-left:4px;border-radius:10px;color:var(--text3);display:flex;align-items:center;justify-content:center}
+.del-btn:active{background:#fdeef0;color:var(--up)}
+.empty{padding:30px 0;text-align:center;color:var(--text3);font-size:13px}
+
+/* 弹窗与提示 */
+.modal-mask{position:fixed;inset:0;background:rgba(20,23,36,.45);display:flex;align-items:center;justify-content:center;z-index:50;opacity:0;pointer-events:none;transition:opacity .18s}
+.modal-mask.show{opacity:1;pointer-events:auto}
+.modal{width:78%;max-width:300px;background:#fff;border-radius:18px;padding:22px 20px 16px;transform:scale(.92);transition:transform .18s}
+.modal-mask.show .modal{transform:scale(1)}
+.modal-text{font-size:15px;text-align:center;line-height:1.5}
+.modal-actions{display:flex;gap:10px;margin-top:18px}
+.modal-actions button{flex:1;height:42px;border-radius:12px;font-size:15px}
+.modal-cancel{background:#f2f4f9;color:var(--text2)}
+.modal-ok{background:var(--up);color:#fff;font-weight:600}
+.toast{position:fixed;left:50%;bottom:calc(64px + env(safe-area-inset-bottom));transform:translate(-50%,10px);background:rgba(34,38,58,.92);color:#fff;font-size:13px;padding:9px 18px;border-radius:22px;opacity:0;pointer-events:none;transition:all .2s;z-index:60;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="hero">
+    <div class="hero-top">
+      <div>
+        <div class="hero-label">最新体重</div>
+        <div class="hero-weight"><span id="heroWeight">--</span><span class="unit">kg</span></div>
+        <div class="hero-delta" id="heroDelta"></div>
+      </div>
+      <div class="streak">
+        <div class="streak-num" id="streakNum">0</div>
+        <div class="streak-label">连续记录(天)</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stat"><div class="stat-label">7天变化</div><div class="stat-value" id="stat7">—</div></div>
+    <div class="stat"><div class="stat-label">累计变化</div><div class="stat-value" id="statTotal">—</div></div>
+    <div class="stat"><div class="stat-label">记录次数</div><div class="stat-value" id="statCount">0</div></div>
+  </section>
+
+  <section class="card">
+    <div class="card-title">体重趋势<span class="sub" id="chartSub"></span></div>
+    <div class="chart-wrap" id="chartWrap">
+      <div id="chart"></div>
+      <div class="tip" id="chartTip"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-title">记录体重</div>
+    <div class="field-row">
+      <div class="field">
+        <label for="dateInput">日期</label>
+        <input type="date" id="dateInput">
+      </div>
+      <div class="field" style="flex:1.25">
+        <label for="weightInput">体重 (kg)</label>
+        <div class="stepper">
+          <button class="step-btn" id="minusBtn" type="button">−</button>
+          <input type="number" id="weightInput" inputmode="decimal" step="0.1" min="20" max="300" placeholder="0.0">
+          <button class="step-btn" id="plusBtn" type="button">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="hint" id="inputHint"></div>
+    <button class="save-btn" id="saveBtn">保存记录</button>
+  </section>
+
+  <section class="card">
+    <div class="card-title">历史记录<span class="sub" id="historySub"></span></div>
+    <ul class="history" id="historyList"></ul>
+    <div class="empty" id="historyEmpty" hidden>还没有记录，记下第一笔开始吧</div>
+  </section>
+</div>
+
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <div class="modal-text" id="modalText"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="modalCancel">取消</button>
+      <button class="modal-ok" id="modalOk">删除</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  var STORE_KEY = 'weight-records-v1';
+  var WEEK = ['日','一','二','三','四','五','六'];
+
+  var records = load();
+
+  /* ---------- 工具 ---------- */
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORE_KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      if(!Array.isArray(arr)) return [];
+      return arr.filter(function(r){ return r && typeof r.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && isFinite(r.weight); });
+    }catch(e){ return []; }
+  }
+  function persist(){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(records)); }
+    catch(e){ toast('保存失败，浏览器存储不可用'); }
+  }
+  function sortRecords(){
+    records.sort(function(a,b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+  }
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+  function fmtDate(d){ return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+  function parseDate(s){ var p = s.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
+  function displayDate(s){ var d = parseDate(s); return (d.getMonth()+1) + '月' + d.getDate() + '日'; }
+  function weekLabel(s){ return '周' + WEEK[parseDate(s).getDay()]; }
+  function fixed(v){ return (Math.round(v*10)/10).toFixed(1); }
+
+  var toastTimer = null;
+  function toast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 1800);
+  }
+
+  /* ---------- 渲染：顶部与统计 ---------- */
+  function renderHero(){
+    var n = records.length;
+    var hw = document.getElementById('heroWeight');
+    var hd = document.getElementById('heroDelta');
+    var streak = calcStreak();
+    document.getElementById('streakNum').textContent = streak;
+
+    if(!n){ hw.textContent = '--'; hd.textContent = '在下方记录第一笔吧'; return; }
+    var latest = records[n-1];
+    hw.textContent = fixed(latest.weight);
+    if(n >= 2){
+      var d = latest.weight - records[n-2].weight;
+      hd.innerHTML = '较上次 ' + deltaHTML(d) + ' kg';
+    }else{
+      hd.textContent = '继续记录，看变化';
+    }
+  }
+
+  function deltaHTML(d){
+    var v = Math.round(d*10)/10;
+    if(v > 0) return '<span style="color:#ffd7dc">▲' + v.toFixed(1) + '</span>';
+    if(v < 0) return '<span style="color:#c8f5e4">▼' + Math.abs(v).toFixed(1) + '</span>';
+    return '<span>0.0</span>';
+  }
+
+  function calcStreak(){
+    if(!records.length) return 0;
+    var set = {};
+    records.forEach(function(r){ set[r.date] = 1; });
+    var d = new Date();
+    if(!set[fmtDate(d)]){
+      d.setDate(d.getDate()-1);
+      if(!set[fmtDate(d)]) return 0;
+    }
+    var n = 0;
+    while(set[fmtDate(d)]){ n++; d.setDate(d.getDate()-1); }
+    return n;
+  }
+
+  function setStat(id, d, has){
+    var el = document.getElementById(id);
+    if(!has){ el.textContent = '—'; el.className = 'stat-value'; return; }
+    var v = Math.round(d*10)/10;
+    if(v > 0){ el.textContent = '+' + v.toFixed(1); el.className = 'stat-value up'; }
+    else if(v < 0){ el.textContent = v.toFixed(1); el.className = 'stat-value down'; }
+    else{ el.textContent = '0.0'; el.className = 'stat-value'; }
+  }
+
+  function renderStats(){
+    var n = records.length;
+    document.getElementById('statCount').textContent = n;
+    if(n < 2){
+      setStat('stat7', 0, false);
+      setStat('statTotal', 0, false);
+      return;
+    }
+    var latest = records[n-1];
+    setStat('statTotal', latest.weight - records[0].weight, true);
+
+    // 7天变化：找距最新记录 7 天前（含更早）最近的一条
+    var limit = parseDate(latest.date); limit.setDate(limit.getDate()-7);
+    var limitStr = fmtDate(limit);
+    var base = null;
+    for(var i = n-1; i >= 0; i--){ if(records[i].date <= limitStr){ base = records[i]; break; } }
+    setStat('stat7', base ? latest.weight - base.weight : 0, !!base);
+  }
+
+  /* ---------- 渲染：趋势图 ---------- */
+  var chartPoints = [];
+
+  function renderChart(){
+    var box = document.getElementById('chart');
+    var data = records.slice(-30);
+    document.getElementById('chartSub').textContent = data.length ? '最近' + data.length + '次' : '';
+    hideTip();
+    chartPoints = [];
+
+    if(data.length < 2){
+      box.innerHTML = '<div class="chart-empty">再记录 ' + (2 - data.length) + ' 次即可生成趋势图</div>';
+      return;
+    }
+
+    var W = box.clientWidth || 320, H = 190;
+    var padL = 46, padR = 14, padT = 16, padB = 26;
+    var ws = data.map(function(r){ return r.weight; });
+    var min = Math.min.apply(null, ws), max = Math.max.apply(null, ws);
+    if(max - min < 1){ var mid = (max+min)/2; min = mid - 0.5; max = mid + 0.5; }
+    var pad = (max-min) * 0.18; min -= pad; max += pad;
+
+    function X(i){ return padL + (W-padL-padR) * (i/(data.length-1)); }
+    function Y(w){ return padT + (H-padT-padB) * (1 - (w-min)/(max-min)); }
+
+    var pts = data.map(function(r,i){ return { x: X(i), y: Y(r.weight), date: r.date, weight: r.weight }; });
+    chartPoints = pts;
+    var line = smoothPath(pts);
+    var area = line + ' L ' + pts[pts.length-1].x + ' ' + (H-padB) + ' L ' + pts[0].x + ' ' + (H-padB) + ' Z';
+
+    // 网格线与纵轴标签（取数据真实的最小/中/大值）
+    var vals = [Math.min.apply(null, ws), (Math.min.apply(null, ws)+Math.max.apply(null, ws))/2, Math.max.apply(null, ws)];
+    var grid = '';
+    vals.forEach(function(v){
+      var y = Y(v);
+      grid += '<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#edf0f6" stroke-width="1"/>' +
+              '<text x="'+(padL-8)+'" y="'+y+'" text-anchor="end" dominant-baseline="middle" font-size="10" fill="#b8bdcc">'+v.toFixed(1)+'</text>';
+    });
+
+    // 横轴日期标签
+    var xn = data.length;
+    var xlabels = '<text x="'+pts[0].x+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" fill="#b8bdcc">'+displayDate(data[0].date)+'</text>';
+    if(xn >= 6){
+      var mi = Math.floor((xn-1)/2);
+      xlabels += '<text x="'+pts[mi].x+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" fill="#b8bdcc">'+displayDate(data[mi].date)+'</text>';
+    }
+    xlabels += '<text x="'+pts[xn-1].x+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" fill="#b8bdcc">'+displayDate(data[xn-1].date)+'</text>';
+
+    var dots = pts.map(function(p, i){
+      var last = i === pts.length-1;
+      return last
+        ? '<circle cx="'+p.x+'" cy="'+p.y+'" r="4.5" fill="#5b7cff" stroke="#fff" stroke-width="2"/>'
+        : '<circle cx="'+p.x+'" cy="'+p.y+'" r="3" fill="#fff" stroke="#5b7cff" stroke-width="2"/>';
+    }).join('');
+
+    box.innerHTML =
+      '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">' +
+        '<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0" stop-color="rgba(91,124,255,.22)"/><stop offset="1" stop-color="rgba(91,124,255,0)"/>' +
+        '</linearGradient></defs>' +
+        grid +
+        '<path d="'+area+'" fill="url(#areaGrad)"/>' +
+        '<path d="'+line+'" fill="none" stroke="#5b7cff" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '<line id="guideLine" y1="'+padT+'" y2="'+(H-padB)+'" x1="-10" x2="-10" stroke="#c9d3f5" stroke-width="1" stroke-dasharray="3 3" opacity="0"/>' +
+        dots + xlabels +
+      '</svg>';
+  }
+
+  // Catmull-Rom 转贝塞尔平滑曲线
+  function smoothPath(p){
+    if(p.length < 3) return 'M ' + p[0].x + ' ' + p[0].y + ' L ' + p[1].x + ' ' + p[1].y;
+    var d = 'M ' + p[0].x + ' ' + p[0].y;
+    for(var i = 0; i < p.length-1; i++){
+      var p0 = p[i-1] || p[i], p1 = p[i], p2 = p[i+1], p3 = p[i+2] || p2;
+      d += ' C ' + (p1.x+(p2.x-p0.x)/6) + ' ' + (p1.y+(p2.y-p0.y)/6) +
+           ' ' + (p2.x-(p3.x-p1.x)/6) + ' ' + (p2.y-(p3.y-p1.y)/6) +
+           ' ' + p2.x + ' ' + p2.y;
+    }
+    return d;
+  }
+
+  /* 图表触摸提示 */
+  var tipEl = document.getElementById('chartTip');
+  function hideTip(){
+    tipEl.classList.remove('show');
+    var g = document.getElementById('guideLine');
+    if(g) g.setAttribute('opacity', '0');
+  }
+  function chartPointer(e){
+    if(!chartPoints.length) return;
+    var svg = e.currentTarget.querySelector('svg');
+    if(!svg) return;
+    var rect = svg.getBoundingClientRect();
+    var x = e.clientX - rect.left;
+    var best = -1, bd = Infinity;
+    chartPoints.forEach(function(p, i){
+      var d = Math.abs(p.x - x);
+      if(d < bd){ bd = d; best = i; }
+    });
+    if(best < 0 || bd > 44){ hideTip(); return; }
+    var p = chartPoints[best];
+    tipEl.textContent = displayDate(p.date) + ' ' + fixed(p.weight) + 'kg';
+    tipEl.style.left = p.x + 'px';
+    tipEl.style.top = p.y + 'px';
+    tipEl.classList.add('show');
+    var g = document.getElementById('guideLine');
+    if(g){
+      g.setAttribute('x1', p.x); g.setAttribute('x2', p.x);
+      g.setAttribute('opacity', '1');
+    }
+  }
+  var chartWrap = document.getElementById('chartWrap');
+  chartWrap.addEventListener('pointermove', chartPointer);
+  chartWrap.addEventListener('pointerdown', chartPointer);
+  chartWrap.addEventListener('pointerleave', hideTip);
+  chartWrap.addEventListener('pointercancel', hideTip);
+
+  /* ---------- 渲染：历史列表 ---------- */
+  var trashSVG = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2zM6.5 9h11l-.9 11.2a1.5 1.5 0 0 1-1.5 1.3H8.9a1.5 1.5 0 0 1-1.5-1.3L6.5 9zm3.2 2v8h1.4v-8H9.7zm3.2 0v8h1.4v-8h-1.4z"/></svg>';
+
+  function renderHistory(){
+    var list = document.getElementById('historyList');
+    var empty = document.getElementById('historyEmpty');
+    document.getElementById('historySub').textContent = records.length ? '共' + records.length + '条' : '';
+
+    if(!records.length){
+      list.innerHTML = '';
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+
+    var html = '';
+    for(var i = records.length-1; i >= 0; i--){
+      var r = records[i];
+      var deltaHtml = '<span class="history-delta flat">—</span>';
+      if(i > 0){
+        var d = Math.round((r.weight - records[i-1].weight)*10)/10;
+        if(d > 0) deltaHtml = '<span class="history-delta up">▲' + d.toFixed(1) + '</span>';
+        else if(d < 0) deltaHtml = '<span class="history-delta down">▼' + Math.abs(d).toFixed(1) + '</span>';
+        else deltaHtml = '<span class="history-delta flat">0.0</span>';
+      }
+      html +=
+        '<li class="history-row">' +
+          '<div class="history-date"><span class="hd-main">' + displayDate(r.date) + '</span><span class="hd-sub">' + weekLabel(r.date) + '</span></div>' +
+          '<div class="history-weight"><span class="hw-main">' + fixed(r.weight) + '</span><span class="hw-unit">kg</span></div>' +
+          deltaHtml +
+          '<button class="del-btn" data-date="' + r.date + '" type="button" aria-label="删除">' + trashSVG + '</button>' +
+        '</li>';
+    }
+    list.innerHTML = html;
+  }
+
+  /* ---------- 录入 ---------- */
+  var dateInput = document.getElementById('dateInput');
+  var weightInput = document.getElementById('weightInput');
+  var saveBtn = document.getElementById('saveBtn');
+  var inputHint = document.getElementById('inputHint');
+
+  function syncInputForDate(){
+    var r = null;
+    for(var i = 0; i < records.length; i++){ if(records[i].date === dateInput.value){ r = records[i]; break; } }
+    if(r){
+      weightInput.value = fixed(r.weight);
+      inputHint.textContent = '该日期已有记录，保存后将更新';
+      saveBtn.textContent = '更新记录';
+    }else{
+      weightInput.value = '';
+      inputHint.textContent = '';
+      saveBtn.textContent = '保存记录';
+    }
+  }
+
+  function stepWeight(d){
+    var v = parseFloat(weightInput.value);
+    if(!isFinite(v)) v = records.length ? records[records.length-1].weight : 60;
+    v = Math.round((v+d)*10)/10;
+    v = Math.min(300, Math.max(20, v));
+    weightInput.value = v.toFixed(1);
+  }
+  document.getElementById('minusBtn').addEventListener('click', function(){ stepWeight(-0.1); });
+  document.getElementById('plusBtn').addEventListener('click', function(){ stepWeight(0.1); });
+  dateInput.addEventListener('change', syncInputForDate);
+
+  function onSave(){
+    var date = dateInput.value;
+    var w = parseFloat(weightInput.value);
+    if(!date){ toast('请选择日期'); return; }
+    if(!isFinite(w) || w < 20 || w > 300){ toast('请输入 20~300 之间的体重'); return; }
+    var weight = Math.round(w*10)/10;
+    var updated = false;
+    for(var i = 0; i < records.length; i++){
+      if(records[i].date === date){ records[i].weight = weight; updated = true; break; }
+    }
+    if(!updated) records.push({ date: date, weight: weight });
+    sortRecords();
+    persist();
+    toast(updated ? '已更新 ' + displayDate(date) + ' 的记录' : '记录成功，继续保持！');
+    renderAll();
+    dateInput.value = fmtDate(new Date());
+    syncInputForDate();
+  }
+  saveBtn.addEventListener('click', onSave);
+  weightInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') onSave(); });
+
+  /* ---------- 删除 ---------- */
+  var modalMask = document.getElementById('modalMask');
+  var modalText = document.getElementById('modalText');
+  var pendingDate = null;
+
+  document.getElementById('historyList').addEventListener('click', function(e){
+    var btn = e.target.closest('.del-btn');
+    if(!btn) return;
+    pendingDate = btn.getAttribute('data-date');
+    modalText.textContent = '删除 ' + displayDate(pendingDate) + ' 的记录？';
+    modalMask.classList.add('show');
+  });
+  document.getElementById('modalCancel').addEventListener('click', function(){ modalMask.classList.remove('show'); pendingDate = null; });
+  modalMask.addEventListener('click', function(e){ if(e.target === modalMask){ modalMask.classList.remove('show'); pendingDate = null; } });
+  document.getElementById('modalOk').addEventListener('click', function(){
+    if(pendingDate){
+      records = records.filter(function(r){ return r.date !== pendingDate; });
+      persist();
+      renderAll();
+      syncInputForDate();
+      toast('已删除');
+    }
+    modalMask.classList.remove('show');
+    pendingDate = null;
+  });
+
+  /* ---------- 初始化 ---------- */
+  function renderAll(){
+    renderHero();
+    renderStats();
+    renderChart();
+    renderHistory();
+  }
+
+  dateInput.value = fmtDate(new Date());
+  syncInputForDate();
+  renderAll();
+
+  var rzTimer = null;
+  window.addEventListener('resize', function(){
+    clearTimeout(rzTimer);
+    rzTimer = setTimeout(renderChart, 150);
+  });
+})();
+</script>
+</body>
+</html>
