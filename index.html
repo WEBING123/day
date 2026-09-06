@@ -92,15 +92,11 @@ input{font-family:inherit}
 .card-title{font-size:15.5px;font-weight:700;display:flex;align-items:center;justify-content:space-between;letter-spacing:.2px}
 .card-title .sub{font-size:11px;color:var(--text3);font-weight:400}
 .title-right{display:flex;align-items:center;gap:12px}
-.note-toggle{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer}
-
-/* 开关 */
-.switch{position:relative;width:40px;height:23px;display:inline-block;flex-shrink:0}
-.switch input{opacity:0;width:0;height:0;position:absolute}
-.switch .track{position:absolute;inset:0;background:#dde1ee;border-radius:12px;transition:background .22s}
-.switch .track::after{content:'';position:absolute;left:2.5px;top:2.5px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .22s cubic-bezier(.34,1.4,.64,1);box-shadow:0 2px 5px rgba(28,33,48,.28)}
-.switch input:checked + .track{background:var(--primary)}
-.switch input:checked + .track::after{transform:translateX(17px)}
+/* 图标开关 */
+.note-toggle{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:10px;color:var(--text3);transition:all .18s;cursor:pointer;flex-shrink:0}
+.note-toggle svg{width:18px;height:18px;display:block}
+.note-toggle.active{background:var(--primary-soft);color:var(--primary)}
+.note-toggle:active{transform:scale(.92)}
 
 /* ---------- 趋势图 ---------- */
 .chart-wrap{position:relative;margin-top:8px}
@@ -167,41 +163,40 @@ input{font-family:inherit}
 @keyframes shine{0%,55%{left:-60%}80%,100%{left:130%}}
 .save-btn:active{transform:scale(.965);box-shadow:0 4px 12px rgba(90,116,248,.32)}
 
-/* ---------- 历史记录 ---------- */
-.history{list-style:none;margin-top:4px}
-.history > li{padding:13px 0;border-bottom:1px solid var(--line)}
-.history > li:last-child{border-bottom:none}
-.history-row{display:flex;align-items:center}
-.history-note{
-  font-size:12px;color:var(--text2);border-radius:10px;
-  padding:7px 11px;margin-top:9px;line-height:1.55;word-break:break-word;
-  background:#f6f7fc;border-left:3px solid var(--text3);
+/* ---------- 历史记录（按日卡片） ---------- */
+.history{list-style:none;margin-top:6px;display:flex;flex-direction:column;gap:10px}
+.history > li{
+  position:relative;background:#fff;border-radius:16px;padding:13px 14px 12px;
+  box-shadow:0 1px 3px rgba(28,33,48,.05),0 6px 18px rgba(28,33,48,.05);
+  overflow:hidden;animation:fadeUp .35s ease both;
 }
-.history-note.am{background:#f0f3ff;border-left-color:var(--primary)}
-.history-note.pm{background:var(--pm-soft);border-left-color:var(--pm)}
-.history-date{width:104px}
-.hd-main{display:block;font-size:15px;font-weight:600;letter-spacing:.2px}
-.hd-sub{display:block;font-size:11px;color:var(--text3);margin-top:2px}
-.slot-tag{
-  display:inline-flex;align-items:center;justify-content:center;
-  width:23px;height:23px;border-radius:8px;margin-left:6px;
-  vertical-align:-4px;
-}
-.slot-tag svg{width:13px;height:13px;display:block}
-.slot-tag.am{background:var(--primary-soft);color:var(--primary)}
-.slot-tag.pm{background:var(--pm-soft);color:var(--pm)}
-.history-weight{flex:1;text-align:right;font-variant-numeric:tabular-nums}
-.hw-main{font-size:18px;font-weight:700;letter-spacing:-.3px}
-.hw-unit{font-size:11px;color:var(--text3);margin-left:3px;font-weight:400}
-.history-delta{width:66px;text-align:right;font-size:12px;font-variant-numeric:tabular-nums;font-weight:600}
-.history-delta.up{color:var(--up)}
-.history-delta.down{color:var(--down)}
-.history-delta.flat{color:var(--text3);font-weight:400}
-.del-btn{
-  width:36px;height:36px;margin-left:6px;border-radius:11px;color:var(--text3);
-  display:flex;align-items:center;justify-content:center;transition:all .15s;
-}
-.del-btn:active{background:#fdecef;color:var(--up);transform:scale(.9)}
+.history > li::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--primary),var(--pm))}
+.day-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.day-head-left{display:flex;align-items:center;gap:8px}
+.day-date{font-size:15px;font-weight:700;letter-spacing:.2px}
+.day-week{font-size:10.5px;color:var(--text2);background:#eef0f7;padding:2.5px 8px;border-radius:20px;font-weight:500}
+.day-del{width:26px;height:26px;border-radius:8px;color:#d3d8e6;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.day-del svg{width:14px;height:14px;display:block}
+.day-del:active{background:#fdecef;color:var(--up);transform:scale(.9)}
+.slots{display:flex;align-items:stretch;gap:8px}
+.slot-item{flex:1;display:flex;align-items:flex-start;gap:9px;min-width:0;background:#f7f8fc;border-radius:12px;padding:10px 11px;transition:background .15s}
+.slot-item:active{background:#eff1f8}
+.slot-item.missing{background:transparent;border:1px dashed #e3e6f0}
+.slot-ico{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9px;flex-shrink:0}
+.slot-ico.am{background:var(--primary-soft);color:var(--primary)}
+.slot-ico.pm{background:var(--pm-soft);color:var(--pm)}
+.slot-ico.miss{background:#f0f1f6;color:#cdd2e0}
+.slot-ico svg{width:15px;height:15px;display:block}
+.slot-body{flex:1;min-width:0}
+.slot-main{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+.slot-w{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.3px}
+.slot-w .unit{font-size:10.5px;color:var(--text3);font-weight:400;margin-left:2px}
+.slot-delta{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.5}
+.slot-delta.up{background:rgba(240,80,110,.1);color:var(--up)}
+.slot-delta.down{background:rgba(14,181,130,.1);color:var(--down)}
+.slot-delta.flat{background:#eef0f7;color:var(--text3)}
+.slot-missing-label{font-size:12px;color:#cdd2e0;line-height:1.8}
+.slot-note{font-size:10.5px;color:var(--text3);margin-top:4px;line-height:1.35;word-break:break-word;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;opacity:.75}
 .empty{padding:36px 0 32px;text-align:center;color:var(--text3);font-size:13px;line-height:1.9}
 .empty svg{display:block;margin:0 auto 8px;opacity:.5}
 
@@ -314,7 +309,7 @@ input{font-family:inherit}
   </section>
 
   <section class="card">
-    <div class="card-title">历史记录<span class="title-right"><span class="sub" id="historySub"></span><label class="note-toggle">备注<span class="switch"><input type="checkbox" id="noteToggle"><span class="track"></span></span></label></span></div>
+    <div class="card-title">历史记录<span class="title-right"><span class="sub" id="historySub"></span><button type="button" class="note-toggle" id="noteToggle" title="显示备注" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M9 9h1"/><path d="M9 13h6"/><path d="M9 17h6"/></svg></button></span></div>
     <ul class="history" id="historyList"></ul>
     <div class="empty" id="historyEmpty" hidden>
       <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
@@ -653,36 +648,59 @@ input{font-family:inherit}
   function renderHistory(){
     var list = document.getElementById('historyList');
     var empty = document.getElementById('historyEmpty');
-    var entries = allEntries();
-    document.getElementById('historySub').textContent = entries.length ? '共' + entries.length + '条' : '';
+    document.getElementById('historySub').textContent = records.length ? '共' + records.length + '天' : '';
 
-    if(!entries.length){
+    if(!records.length){
       list.innerHTML = '';
       empty.hidden = false;
       return;
     }
     empty.hidden = true;
 
-    var html = '';
-    for(var i = entries.length-1; i >= 0; i--){
-      var e = entries[i];
-      var deltaHtml = '<span class="history-delta flat">—</span>';
-      if(i > 0){
-        var d = Math.round((e.w - entries[i-1].w)*100)/100;
-        if(d > 0) deltaHtml = '<span class="history-delta up">▲' + fixed(d) + '</span>';
-        else if(d < 0) deltaHtml = '<span class="history-delta down">▼' + fixed(Math.abs(d)) + '</span>';
-        else deltaHtml = '<span class="history-delta flat">0</span>';
+    // 预计算每个时段相对上一次同时段的变化
+    var lastAm = null, lastPm = null;
+    var deltaMap = {};
+    for(var i = 0; i < records.length; i++){
+      var r = records[i];
+      if(r.am){ deltaMap[r.date+'am'] = lastAm === null ? null : Math.round((r.am.w - lastAm)*100)/100; lastAm = r.am.w; }
+      if(r.pm){ deltaMap[r.date+'pm'] = lastPm === null ? null : Math.round((r.pm.w - lastPm)*100)/100; lastPm = r.pm.w; }
+    }
+
+    function slotHTML(day, slot){
+      var e = day[slot];
+      if(!e){
+        return '<div class="slot-item missing">' +
+          '<div class="slot-ico miss">' + SLOT_ICON[slot] + '</div>' +
+          '<div class="slot-body"><span class="slot-missing-label">未记录</span></div>' +
+        '</div>';
       }
-      var noteHtml = (showNotes && e.note) ? '<div class="history-note ' + e.slot + '">' + escapeHTML(e.note) + '</div>' : '';
+      var d = deltaMap[day.date + slot];
+      var dh;
+      if(d === null) dh = '<span class="slot-delta flat">首次</span>';
+      else if(d > 0) dh = '<span class="slot-delta up">▲' + fixed(d) + '</span>';
+      else if(d < 0) dh = '<span class="slot-delta down">▼' + fixed(Math.abs(d)) + '</span>';
+      else dh = '<span class="slot-delta flat">持平</span>';
+      var nh = (showNotes && e.note) ? '<div class="slot-note">' + escapeHTML(e.note) + '</div>' : '';
+      return '<div class="slot-item">' +
+        '<div class="slot-ico ' + slot + '">' + SLOT_ICON[slot] + '</div>' +
+        '<div class="slot-body">' +
+          '<div class="slot-main"><span class="slot-w">' + fixed(e.w) + '<span class="unit">kg</span></span>' + dh + '</div>' +
+          nh +
+        '</div>' +
+      '</div>';
+    }
+
+    var html = '';
+    for(var j = records.length-1; j >= 0; j--){
+      var day = records[j];
+      var delHTML = (day.am || day.pm) ? '<button class="day-del" data-date="' + day.date + '" data-slot="' + (day.pm ? 'pm' : 'am') + '" type="button" aria-label="删除记录" title="删除记录">' + trashSVG + '</button>' : '';
       html +=
         '<li>' +
-          '<div class="history-row">' +
-            '<div class="history-date"><span class="hd-main">' + displayDate(e.date) + '<span class="slot-tag ' + e.slot + '" title="' + SLOT_NAME[e.slot] + '记录">' + SLOT_ICON[e.slot] + '</span></span><span class="hd-sub">' + weekLabel(e.date) + '</span></div>' +
-            '<div class="history-weight"><span class="hw-main">' + fixed(e.w) + '</span><span class="hw-unit">kg</span></div>' +
-            deltaHtml +
-            '<button class="del-btn" data-date="' + e.date + '" data-slot="' + e.slot + '" type="button" aria-label="删除">' + trashSVG + '</button>' +
+          '<div class="day-head">' +
+            '<div class="day-head-left"><span class="day-date">' + displayDate(day.date) + '</span><span class="day-week">' + weekLabel(day.date) + '</span></div>' +
+            delHTML +
           '</div>' +
-          noteHtml +
+          '<div class="slots">' + slotHTML(day, 'am') + slotHTML(day, 'pm') + '</div>' +
         '</li>';
     }
     list.innerHTML = html;
@@ -766,7 +784,7 @@ input{font-family:inherit}
   var pendingSlot = null;
 
   document.getElementById('historyList').addEventListener('click', function(e){
-    var btn = e.target.closest('.del-btn');
+    var btn = e.target.closest('.day-del');
     if(!btn) return;
     pendingDate = btn.getAttribute('data-date');
     pendingSlot = btn.getAttribute('data-slot');
@@ -796,10 +814,16 @@ input{font-family:inherit}
 
   /* ---------- 备注显示开关 ---------- */
   var noteToggle = document.getElementById('noteToggle');
-  noteToggle.checked = showNotes;
-  noteToggle.addEventListener('change', function(){
-    showNotes = noteToggle.checked;
+  function updateNoteToggle(){
+    noteToggle.classList.toggle('active', showNotes);
+    noteToggle.title = showNotes ? '隐藏备注' : '显示备注';
+    noteToggle.setAttribute('aria-pressed', showNotes ? 'true' : 'false');
+  }
+  updateNoteToggle();
+  noteToggle.addEventListener('click', function(){
+    showNotes = !showNotes;
     try{ localStorage.setItem(PREF_KEY, showNotes ? '1' : '0'); }catch(e){}
+    updateNoteToggle();
     renderHistory();
   });
 
