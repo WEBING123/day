@@ -737,7 +737,15 @@ input{font-family:inherit}
     }
   }
 
-  dateInput.addEventListener('change', syncInputForDate);
+  dateInput.addEventListener('change', function(){
+    // 选择"今天"时根据当前时间自动切换时段，其他日期保持上次选择
+    if(dateInput.value === toDateStr(new Date())){
+      var slot = (new Date()).getHours() < 12 ? 'am' : 'pm';
+      setSlot(slot);
+    }else{
+      syncInputForDate();
+    }
+  });
 
   function onSave(){
     var date = dateInput.value;
