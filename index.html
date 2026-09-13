@@ -330,6 +330,11 @@ input{font-family:inherit}
     <button class="save-btn" id="saveBtn">保存记录</button>
   </section>
 
+  <section class="card" id="calendarCard" hidden>
+    <div class="card-title">日历记录</div>
+    <div class="calendar-section" id="calendarSection"></div>
+  </section>
+
   <section class="card">
     <div class="card-title">近期记录<span class="title-right"><span class="sub" id="historySub"></span><button type="button" class="note-toggle" id="noteToggle" title="显示备注" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M9 9h1"/><path d="M9 13h6"/><path d="M9 17h6"/></svg></button></span></div>
     <ul class="history" id="historyList"></ul>
@@ -337,11 +342,6 @@ input{font-family:inherit}
       <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
       还没有记录<br>记下第一笔开始吧
     </div>
-  </section>
-
-  <section class="card" id="calendarCard" hidden>
-    <div class="card-title">日历记录</div>
-    <div class="calendar-section" id="calendarSection"></div>
   </section>
 </div>
 
@@ -694,12 +694,12 @@ input{font-family:inherit}
     }
     empty.hidden = true;
 
-    // 近7天边界（含今天）
+    // 近3天边界（含今天）
     var boundary = new Date();
-    boundary.setDate(boundary.getDate() - 6);
+    boundary.setDate(boundary.getDate() - 2);
     var boundaryStr = fmtDate(boundary);
 
-    // 拆分：近7天 → 列表；更早 → 日历
+    // 拆分：近3天 → 列表；更早 → 日历
     var recentRecords = [];
     var oldRecords = [];
     for(var i = 0; i < records.length; i++){
