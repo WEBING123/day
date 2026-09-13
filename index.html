@@ -205,23 +205,23 @@ input{font-family:inherit}
 /* ---------- 日历视图（7天前数据） ---------- */
 .calendar-section{margin-top:12px}
 .calendar-section[hidden]{display:none}
-.cal-month{display:flex;flex-direction:column;gap:8px}
-.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:2px 0}
-.cal-nav-btn{width:32px;height:32px;border-radius:9px;border:none;background:#eef1f9;color:var(--text2);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;-webkit-user-select:none;user-select:none}
-.cal-nav-btn:active{background:#e0e4f5;transform:scale(.92)}
-.cal-nav-btn:disabled{opacity:.3;pointer-events:none}
-.cal-month-head{font-size:14px;font-weight:700;color:var(--text);text-align:center}
-.cal-week-row{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:10px;color:var(--text3);font-weight:500}
+.cal-month{display:flex;flex-direction:column;gap:9px}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:4px 0 6px;border-bottom:1px solid rgba(0,0,0,.04)}
+.cal-nav-btn{width:30px;height:30px;border-radius:10px;border:none;background:linear-gradient(180deg,#f5f6fa,#eef0f5);color:var(--text2);font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;-webkit-user-select:none;user-select:none;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.cal-nav-btn:active{background:#e0e4f5;transform:scale(.9)}
+.cal-nav-btn:disabled{opacity:.25;pointer-events:none}
+.cal-month-head{font-size:14px;font-weight:700;color:var(--text);text-align:center;letter-spacing:.5px}
+.cal-week-row{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:9.5px;color:var(--text3);font-weight:600;letter-spacing:.3px;padding-bottom:4px}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-.cal-cell{min-height:46px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px 0;background:transparent;position:relative}
-.cal-cell.has-data{background:linear-gradient(180deg,#f0f4ff,#eef2ff)}
+.cal-cell{min-height:56px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:5px 0;background:transparent;position:relative;transition:all .15s}
+.cal-cell.has-data{background:#f5f7fd}
 .cal-cell.today{box-shadow:inset 0 0 0 1.5px var(--primary)}
-.cal-day-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text3);line-height:1;font-weight:700;opacity:.25;pointer-events:none}
-.cal-cell.has-data .cal-day-num{color:var(--primary);opacity:.28}
-.cal-w{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);line-height:1.2;letter-spacing:-.3px;margin-top:2px}
-.cal-w.up{color:var(--up)}
-.cal-w.down{color:var(--down)}
-.cal-delta{font-size:8.5px;font-weight:600;line-height:1;margin-top:1px;font-variant-numeric:tabular-nums}
+.cal-date{font-size:14px;font-weight:700;line-height:1;color:var(--text3);font-variant-numeric:tabular-nums;letter-spacing:-.3px;transition:color .15s}
+.cal-cell.has-data .cal-date{color:var(--text)}
+.cal-cell.today .cal-date{color:var(--primary)}
+.cal-w-line{display:flex;align-items:baseline;gap:3px;font-variant-numeric:tabular-nums;line-height:1}
+.cal-w{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:-.2px}
+.cal-delta{font-size:9px;font-weight:700;line-height:1}
 .cal-delta.up{color:var(--up)}
 .cal-delta.down{color:var(--down)}
 .cal-delta.flat{color:var(--text3)}
@@ -844,13 +844,14 @@ input{font-family:inherit}
           else { deltaCls = ' flat'; deltaTxt = '—'; }
         }
         html += '<div class="cal-cell has-data' + (isToday ? ' today' : '') + '">'
-          + '<div class="cal-day-num">' + day + '</div>'
-          + '<div class="cal-w' + deltaCls + '">' + fixed(w) + '</div>'
-          + (deltaTxt ? '<div class="cal-delta' + deltaCls + '">' + deltaTxt + '</div>' : '')
+          + '<div class="cal-date">' + day + '</div>'
+          + '<div class="cal-w-line"><span class="cal-w">' + fixed(w) + '</span>'
+          + (deltaTxt ? '<span class="cal-delta' + deltaCls + '">' + deltaTxt + '</span>' : '')
+          + '</div>'
           + '</div>';
       }else{
         html += '<div class="cal-cell' + (isToday ? ' today' : '') + '">'
-          + '<div class="cal-day-num">' + day + '</div>'
+          + '<div class="cal-date">' + day + '</div>'
           + '</div>';
       }
     }
