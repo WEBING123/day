@@ -203,10 +203,14 @@ input{font-family:inherit}
 .empty svg{display:block;margin:0 auto 8px;opacity:.5}
 
 /* ---------- 日历视图（7天前数据） ---------- */
-.calendar-section{margin-top:12px;display:flex;flex-direction:column;gap:18px}
+.calendar-section{margin-top:12px}
 .calendar-section[hidden]{display:none}
 .cal-month{display:flex;flex-direction:column;gap:8px}
-.cal-month-head{font-size:14px;font-weight:700;color:var(--text);text-align:center;padding:2px 0}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:2px 0}
+.cal-nav-btn{width:32px;height:32px;border-radius:9px;border:none;background:#eef1f9;color:var(--text2);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;-webkit-user-select:none;user-select:none}
+.cal-nav-btn:active{background:#e0e4f5;transform:scale(.92)}
+.cal-nav-btn:disabled{opacity:.3;pointer-events:none}
+.cal-month-head{font-size:14px;font-weight:700;color:var(--text);text-align:center}
 .cal-week-row{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:10px;color:var(--text3);font-weight:500}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .cal-cell{min-height:46px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px 0;background:transparent;position:relative}
@@ -744,68 +748,94 @@ input{font-family:inherit}
 
   /* ---------- 渲染：日历视图 ---------- */
   var CAL_WEEK_LABELS = ['日','一','二','三','四','五','六'];
+  var calCurrentMonth = null; // {year, month} 1-based month
 
   function renderCalendar(oldRecords, container, todayStr){
     if(!oldRecords.length){
       container.innerHTML = '';
       container.hidden = true;
+      calCurrentMonth = null;
       return;
     }
     container.hidden = false;
 
-    // 按月份分组（倒序，最近月份在前）
-    var months = {};
+    // 计算最早和最晚的有数据的月份
+    var minMonth = null, maxMonth = null;
     oldRecords.forEach(function(r){
       var d = parseDate(r.date);
-      var key = d.getFullYear() + '-' + pad(d.getMonth()+1);
-      if(!months[key]) months[key] = key;
-    });
-    var monthKeys = Object.keys(months).sort().reverse();
-
-    var html = '';
-    monthKeys.forEach(function(mk){
-      var parts = mk.split('-');
-      var year = +parts[0], month = +parts[1]; // 1-based
-      var firstDay = new Date(year, month-1, 1);
-      var startWeekday = firstDay.getDay(); // 0=周日
-      var daysInMonth = new Date(year, month, 0).getDate();
-      var monthLabel = year + '年' + month + '月';
-
-      // 月份头 + 星期标签
-      html += '<div class="cal-month">';
-      html += '<div class="cal-month-head">' + monthLabel + '</div>';
-      html += '<div class="cal-week-row">';
-      CAL_WEEK_LABELS.forEach(function(w){ html += '<span>' + w + '</span>'; });
-      html += '</div>';
-      html += '<div class="cal-grid">';
-
-      // 前置空格
-      for(var s = 0; s < startWeekday; s++){
-        html += '<div class="cal-cell"></div>';
-      }
-
-      // 每一天
-      for(var day = 1; day <= daysInMonth; day++){
-        var dateStr = year + '-' + pad(month) + '-' + pad(day);
-        var rec = findByDate(dateStr);
-        var isToday = dateStr === todayStr;
-        if(rec){
-          var w = rec.pm ? rec.pm.w : rec.am.w;
-          html += '<div class="cal-cell has-data' + (isToday ? ' today' : '') + '">'
-            + '<div class="cal-day-num">' + day + '</div>'
-            + '<div class="cal-w">' + fixed(w) + '</div>'
-            + '</div>';
-        }else{
-          html += '<div class="cal-cell' + (isToday ? ' today' : '') + '">'
-            + '<div class="cal-day-num">' + day + '</div>'
-            + '</div>';
-        }
-      }
-
-      html += '</div></div>'; // cal-grid, cal-month
+      var key = d.getFullYear() * 12 + d.getMonth(); // 0-based month index
+      if(minMonth === null || key < minMonth) minMonth = key;
+      if(maxMonth === null || key > maxMonth) maxMonth = key;
     });
 
+    // 初始化或校正当前显示月份（默认最近的旧数据月份）
+    if(!calCurrentMonth){
+      calCurrentMonth = { year: Math.floor(maxMonth / 12), month: (maxMonth % 12) + 1 };
+    }
+    // 确保在范围内
+    var curIdx = calCurrentMonth.year * 12 + (calCurrentMonth.month - 1);
+    if(curIdx < minMonth){ calCurrentMonth = { year: Math.floor(minMonth/12), month: (minMonth%12)+1 }; }
+    if(curIdx > maxMonth){ calCurrentMonth = { year: Math.floor(maxMonth/12), month: (maxMonth%12)+1 }; }
+
+    var year = calCurrentMonth.year, month = calCurrentMonth.month; // 1-based
+    var firstDay = new Date(year, month-1, 1);
+    var startWeekday = firstDay.getDay();
+    var daysInMonth = new Date(year, month, 0).getDate();
+    var monthLabel = year + '年' + month + '月';
+
+    var canPrev = curIdx > minMonth;
+    var canNext = curIdx < maxMonth;
+
+    var html = '<div class="cal-month">';
+    html += '<div class="cal-nav">'
+      + '<button class="cal-nav-btn" type="button" id="calPrev"' + (canPrev ? '' : ' disabled') + ' aria-label="上个月">‹</button>'
+      + '<div class="cal-month-head">' + monthLabel + '</div>'
+      + '<button class="cal-nav-btn" type="button" id="calNext"' + (canNext ? '' : ' disabled') + ' aria-label="下个月">›</button>'
+      + '</div>';
+    html += '<div class="cal-week-row">';
+    CAL_WEEK_LABELS.forEach(function(w){ html += '<span>' + w + '</span>'; });
+    html += '</div>';
+    html += '<div class="cal-grid">';
+
+    // 前置空格
+    for(var s = 0; s < startWeekday; s++){
+      html += '<div class="cal-cell"></div>';
+    }
+
+    // 每一天
+    for(var day = 1; day <= daysInMonth; day++){
+      var dateStr = year + '-' + pad(month) + '-' + pad(day);
+      var rec = findByDate(dateStr);
+      var isToday = dateStr === todayStr;
+      if(rec){
+        var w = rec.pm ? rec.pm.w : rec.am.w;
+        html += '<div class="cal-cell has-data' + (isToday ? ' today' : '') + '">'
+          + '<div class="cal-day-num">' + day + '</div>'
+          + '<div class="cal-w">' + fixed(w) + '</div>'
+          + '</div>';
+      }else{
+        html += '<div class="cal-cell' + (isToday ? ' today' : '') + '">'
+          + '<div class="cal-day-num">' + day + '</div>'
+          + '</div>';
+      }
+    }
+
+    html += '</div></div>';
     container.innerHTML = html;
+
+    // 绑定切换按钮
+    var prevBtn = document.getElementById('calPrev');
+    var nextBtn = document.getElementById('calNext');
+    if(prevBtn) prevBtn.addEventListener('click', function(){
+      calCurrentMonth.month--;
+      if(calCurrentMonth.month < 1){ calCurrentMonth.month = 12; calCurrentMonth.year--; }
+      renderCalendar(oldRecords, container, todayStr);
+    });
+    if(nextBtn) nextBtn.addEventListener('click', function(){
+      calCurrentMonth.month++;
+      if(calCurrentMonth.month > 12){ calCurrentMonth.month = 1; calCurrentMonth.year++; }
+      renderCalendar(oldRecords, container, todayStr);
+    });
   }
 
   /* ---------- 录入 ---------- */
