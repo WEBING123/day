@@ -434,6 +434,14 @@ input{font-family:inherit}
     });
     return list;
   }
+  // 取指定时段的记录列表（按日期升序），用于同时段对比
+  function entriesBySlot(slot){
+    var list = [];
+    records.forEach(function(r){
+      if(r[slot]) list.push({ date: r.date, slot: slot, w: r[slot].w, note: r[slot].note });
+    });
+    return list;
+  }
   function pad(n){ return n < 10 ? '0' + n : '' + n; }
   function fmtDate(d){ return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
   function parseDate(s){ var p = s.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
@@ -471,9 +479,14 @@ input{font-family:inherit}
     hl.querySelector('svg').style.width = '15px';
     hl.querySelector('svg').style.height = '15px';
     if(entries.length >= 2){
-      var prev = entries[entries.length-2];
-      var d = last.w - prev.w;
-      hd.innerHTML = '较上次(' + SLOT_NAME[prev.slot] + ') ' + deltaHTML(d) + ' kg';
+      var sameSlot = entriesBySlot(last.slot);
+      if(sameSlot.length >= 2){
+        var prev = sameSlot[sameSlot.length-2];
+        var d = last.w - prev.w;
+        hd.innerHTML = '较上次(' + SLOT_NAME[prev.slot] + ') ' + deltaHTML(d) + ' kg';
+      }else{
+        hd.textContent = '继续记录，看变化';
+      }
     }else{
       hd.textContent = '继续记录，看变化';
     }
@@ -518,20 +531,28 @@ input{font-family:inherit}
       return;
     }
     var last = entries[entries.length-1];
-    setStat('statTotal', last.w - entries[0].w, true);
+    // 同时段记录列表（早跟早比、晚跟晚比）
+    var slotEntries = entriesBySlot(last.slot);
+    if(slotEntries.length < 2){
+      setStat('stat7', 0, false);
+      setStat('statTotal', 0, false);
+      setStat('stat30', 0, false);
+      return;
+    }
+    setStat('statTotal', last.w - slotEntries[0].w, true);
 
-    // 7天变化：找距最新记录 7 天前（含更早）最近的一次
+    // 7天变化：找距最新记录 7 天前（含更早）最近的一次同时段记录
     var limit = parseDate(last.date); limit.setDate(limit.getDate()-7);
     var limitStr = fmtDate(limit);
     var base = null;
-    for(var i = entries.length-1; i >= 0; i--){ if(entries[i].date <= limitStr){ base = entries[i]; break; } }
+    for(var i = slotEntries.length-1; i >= 0; i--){ if(slotEntries[i].date <= limitStr){ base = slotEntries[i]; break; } }
     setStat('stat7', base ? last.w - base.w : 0, !!base);
 
-    // 30天变化：找距最新记录 30 天前（含更早）最近的一次
+    // 30天变化：找距最新记录 30 天前（含更早）最近的一次同时段记录
     var limit30 = parseDate(last.date); limit30.setDate(limit30.getDate()-30);
     var limit30Str = fmtDate(limit30);
     var base30 = null;
-    for(var j = entries.length-1; j >= 0; j--){ if(entries[j].date <= limit30Str){ base30 = entries[j]; break; } }
+    for(var j = slotEntries.length-1; j >= 0; j--){ if(slotEntries[j].date <= limit30Str){ base30 = slotEntries[j]; break; } }
     setStat('stat30', base30 ? last.w - base30.w : 0, !!base30);
   }
 
@@ -826,12 +847,14 @@ input{font-family:inherit}
       var rec = findByDate(dateStr);
       var isToday = dateStr === todayStr;
       if(rec){
-        var w = rec.pm ? rec.pm.w : rec.am.w;
-        // 找前一天有记录的数据对比
+        // 选择展示的时段：pm 优先，无 pm 则用 am
+        var slot = rec.pm ? 'pm' : 'am';
+        var w = rec[slot].w;
+        // 同时段对比：找上一条同 slot 的记录
         var prevW = null;
         for(var k = records.length-1; k >= 0; k--){
-          if(records[k].date < dateStr){
-            prevW = records[k].pm ? records[k].pm.w : records[k].am.w;
+          if(records[k].date < dateStr && records[k][slot]){
+            prevW = records[k][slot].w;
             break;
           }
         }
