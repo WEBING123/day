@@ -205,6 +205,15 @@ input{font-family:inherit}
 /* ---------- 日历视图（7天前数据） ---------- */
 .calendar-section{margin-top:12px}
 .calendar-section[hidden]{display:none}
+/* 日历早/晚切换 */
+.cal-slot-toggle{display:flex;gap:2px;background:#f1f3f9;border-radius:10px;padding:3px}
+.cal-slot-btn{width:30px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text3);transition:all .15s}
+.cal-slot-btn svg{width:15px;height:15px;display:block}
+.cal-slot-btn.active{background:#fff;box-shadow:0 1px 3px rgba(28,33,48,.12)}
+.cal-slot-btn.active.am{color:#4f6ef7}
+.cal-slot-btn.active.pm{color:#ef8b3d}
+.cal-slot-btn:active{transform:scale(.9)}
+.cal-empty-hint{padding:24px 0 20px;text-align:center;font-size:12px;color:var(--text3)}
 .cal-month{display:flex;flex-direction:column;gap:9px}
 .cal-nav{display:flex;align-items:center;justify-content:space-between;padding:4px 0 6px;border-bottom:1px solid rgba(0,0,0,.04)}
 .cal-nav-btn{width:30px;height:30px;border-radius:10px;border:none;background:linear-gradient(180deg,#f5f6fa,#eef0f5);color:var(--text2);font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;-webkit-user-select:none;user-select:none;box-shadow:0 1px 2px rgba(0,0,0,.04)}
@@ -331,7 +340,10 @@ input{font-family:inherit}
   </section>
 
   <section class="card" id="calendarCard" hidden>
-    <div class="card-title">日历记录</div>
+    <div class="card-title">日历记录<span class="cal-slot-toggle">
+      <button type="button" class="cal-slot-btn am" id="calSlotAm" aria-label="显示早晨记录" title="早晨记录"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+      <button type="button" class="cal-slot-btn pm" id="calSlotPm" aria-label="显示晚上记录" title="晚上记录"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+    </span></div>
     <div class="calendar-section" id="calendarSection"></div>
   </section>
 
@@ -788,6 +800,7 @@ input{font-family:inherit}
   /* ---------- 渲染：日历视图 ---------- */
   var CAL_WEEK_LABELS = ['日','一','二','三','四','五','六'];
   var calCurrentMonth = null; // {year, month} 1-based month
+  var calCurrentSlot = 'pm';  // 日历当前展示的时段：am/pm（默认晚，与原展示一致）
 
   function renderCalendar(oldRecords, container, todayStr){
     if(!oldRecords.length){
@@ -798,14 +811,27 @@ input{font-family:inherit}
     }
     container.hidden = false;
 
+    // 同步标题处早/晚切换按钮的高亮
+    document.getElementById('calSlotAm').classList.toggle('active', calCurrentSlot === 'am');
+    document.getElementById('calSlotPm').classList.toggle('active', calCurrentSlot === 'pm');
+
+    // 只统计“当前选中时段”有数据的记录，用于确定月份范围
+    var slotOldRecords = oldRecords.filter(function(r){ return !!r[calCurrentSlot]; });
+
     // 计算最早和最晚的有数据的月份
     var minMonth = null, maxMonth = null;
-    oldRecords.forEach(function(r){
+    slotOldRecords.forEach(function(r){
       var d = parseDate(r.date);
       var key = d.getFullYear() * 12 + d.getMonth(); // 0-based month index
       if(minMonth === null || key < minMonth) minMonth = key;
       if(maxMonth === null || key > maxMonth) maxMonth = key;
     });
+
+    // 当前时段没有任何旧数据：只给提示
+    if(minMonth === null){
+      container.innerHTML = '<div class="cal-empty-hint">该时段暂无历史记录</div>';
+      return;
+    }
 
     // 初始化或校正当前显示月份（默认最近的旧数据月份）
     if(!calCurrentMonth){
@@ -846,15 +872,14 @@ input{font-family:inherit}
       var dateStr = year + '-' + pad(month) + '-' + pad(day);
       var rec = findByDate(dateStr);
       var isToday = dateStr === todayStr;
-      if(rec){
-        // 选择展示的时段：pm 优先，无 pm 则用 am
-        var slot = rec.pm ? 'pm' : 'am';
-        var w = rec[slot].w;
-        // 同时段对比：找上一条同 slot 的记录
+      var slotEntry = rec ? rec[calCurrentSlot] : null;
+      if(slotEntry){
+        var w = slotEntry.w;
+        // 同时段对比：找上一条当前 slot 的记录
         var prevW = null;
         for(var k = records.length-1; k >= 0; k--){
-          if(records[k].date < dateStr && records[k][slot]){
-            prevW = records[k][slot].w;
+          if(records[k].date < dateStr && records[k][calCurrentSlot]){
+            prevW = records[k][calCurrentSlot].w;
             break;
           }
         }
@@ -873,6 +898,7 @@ input{font-family:inherit}
           + '</div>'
           + '</div>';
       }else{
+        // 当天该时段无数据：只显示日期号
         html += '<div class="cal-cell' + (isToday ? ' today' : '') + '">'
           + '<div class="cal-date">' + day + '</div>'
           + '</div>';
@@ -895,6 +921,18 @@ input{font-family:inherit}
       if(calCurrentMonth.month > 12){ calCurrentMonth.month = 1; calCurrentMonth.year++; }
       renderCalendar(oldRecords, container, todayStr);
     });
+
+    // 早/晚切换：onclick 重复赋值不会叠加监听器
+    document.getElementById('calSlotAm').onclick = function(){
+      if(calCurrentSlot === 'am') return;
+      calCurrentSlot = 'am';
+      renderCalendar(oldRecords, container, todayStr);
+    };
+    document.getElementById('calSlotPm').onclick = function(){
+      if(calCurrentSlot === 'pm') return;
+      calCurrentSlot = 'pm';
+      renderCalendar(oldRecords, container, todayStr);
+    };
   }
 
   /* ---------- 录入 ---------- */
