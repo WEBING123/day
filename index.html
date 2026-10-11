@@ -228,8 +228,9 @@ input{font-family:inherit}
 .cal-date{font-size:14px;font-weight:700;line-height:1;color:var(--text3);font-variant-numeric:tabular-nums;letter-spacing:-.3px;transition:color .15s}
 .cal-cell.has-data .cal-date{color:var(--text)}
 .cal-cell.today .cal-date{color:var(--primary)}
-.cal-w-line{display:flex;align-items:baseline;gap:3px;font-variant-numeric:tabular-nums;line-height:1}
+.cal-w-line{font-variant-numeric:tabular-nums;line-height:1}
 .cal-w{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:-.2px}
+.cal-delta-line{font-variant-numeric:tabular-nums;line-height:1}
 .cal-delta{font-size:9px;font-weight:700;line-height:1}
 .cal-delta.up{color:var(--up)}
 .cal-delta.down{color:var(--down)}
@@ -893,9 +894,8 @@ input{font-family:inherit}
         }
         html += '<div class="cal-cell has-data' + (isToday ? ' today' : '') + '">'
           + '<div class="cal-date">' + day + '</div>'
-          + '<div class="cal-w-line"><span class="cal-w">' + fixed(w) + '</span>'
-          + (deltaTxt ? '<span class="cal-delta' + deltaCls + '">' + deltaTxt + '</span>' : '')
-          + '</div>'
+          + '<div class="cal-w-line"><span class="cal-w">' + fixed(w) + '</span></div>'
+          + (deltaTxt ? '<div class="cal-delta-line"><span class="cal-delta' + deltaCls + '">' + deltaTxt + '</span></div>' : '')
           + '</div>';
       }else{
         // 当天该时段无数据：只显示日期号
